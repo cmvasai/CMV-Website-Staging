@@ -22,6 +22,7 @@ import { IoLogoWhatsapp } from 'react-icons/io';
 const About = lazy(() => import('./pages/public/About'));
 const Activities = lazy(() => import('./pages/public/Activities'));
 const Events = lazy(() => import('./pages/public/Events'));
+const EventDetails = lazy(() => import('./pages/public/EventDetails'));
 const ContactUs = lazy(() => import('./pages/public/ContactUs'));
 const Volunteer = lazy(() => import('./pages/public/Volunteer'));
 const OurPledge = lazy(() => import('./pages/public/OurPledge'));
@@ -222,7 +223,7 @@ function App() {
                             View More Events
                           </Link>
                         </div>
-                                                
+
 
 
                       </div>
@@ -238,6 +239,7 @@ function App() {
                   <Route path="/donate" element={<Donate />} />
                   <Route path="/register/cgcc2025" element={<RegisterCGCC2025 />} />
                   <Route path="/events" element={<Events featuredEvents={featuredEvents} />} />
+                  <Route path="/events/:id" element={<EventDetails featuredEvents={featuredEvents} />} />
                   <Route path="/admin/login" element={<AdminLogin setAdminLoggedIn={setAdminLoggedIn} />} />
                   <Route
                     path="/admin/dashboard"

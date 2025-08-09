@@ -8,17 +8,17 @@ export const archivedEventsService = {
   getAll: async (params = {}) => {
     try {
       const queryParams = {};
-      
+
       // Add sortBy parameter (default: date_desc)
       if (params.sortBy) {
         queryParams.sortBy = params.sortBy;
       }
-      
+
       // Add year filter
       if (params.year) {
         queryParams.year = params.year;
       }
-      
+
       // Add search query
       if (params.search && params.search.trim()) {
         queryParams.search = params.search.trim();
@@ -27,7 +27,7 @@ export const archivedEventsService = {
       const response = await axios.get(`${API_BASE_URL}/api/archived-events`, {
         params: queryParams
       });
-      
+
       return response.data;
     } catch (error) {
       console.error('Error fetching archived events:', error);
@@ -40,7 +40,7 @@ export const archivedEventsService = {
     try {
       const url = `${API_BASE_URL}/api/archived-events/years`;
       console.log('Making years API call to:', url);
-      
+
       const response = await axios.get(url);
       console.log('Years API raw response:', response);
       console.log('Years API response data:', response.data);
@@ -54,10 +54,15 @@ export const archivedEventsService = {
   // Get single archived event by ID with sharing metadata
   getById: async (id) => {
     try {
+      console.log('ArchivedEventsService: Fetching event with ID:', id);
+      console.log('API URL:', `${API_BASE_URL}/api/archived-events/${id}`);
       const response = await axios.get(`${API_BASE_URL}/api/archived-events/${id}`);
+      console.log('ArchivedEventsService: Response received:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error fetching archived event:', error);
+      console.error('ArchivedEventsService: Error fetching archived event:', error);
+      console.error('ArchivedEventsService: Error response:', error.response?.data);
+      console.error('ArchivedEventsService: Error status:', error.response?.status);
       throw error;
     }
   },

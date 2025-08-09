@@ -3,9 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import { FaCalendarAlt, FaMapMarkerAlt, FaUsers, FaArrowLeft, FaShareAlt, FaDownload, FaSpinner } from 'react-icons/fa';
 import { Helmet } from 'react-helmet-async';
 import archivedEventsService from '../../services/archivedEventsService';
-import { ArchivedEventDetailsSkeleton } from '../../components/LoadingSkeletons';
 import ImageLightbox from '../../components/ImageLightbox';
 import Breadcrumb from '../../components/Breadcrumb';
+import ContactButtons from '../../components/ContactButtons';
 import { showToast } from '../../components/Toast';
 import { scrollToTop } from '../../utils/scrollUtils';
 
@@ -19,22 +19,25 @@ const ArchivedEventDetails = () => {
   const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
-    const fetchEventDetailsInternal = async () => {
+    const fetchEventDetails = async () => {
       try {
         setLoading(true);
+        console.log('Fetching event details for ID:', id);
         const data = await archivedEventsService.getById(id);
+        console.log('Received event data:', data);
         setEvent(data);
         setError(null);
       } catch (err) {
         console.error('Error fetching event details:', err);
         setError('Failed to load event details. Please try again later.');
-        showToast('Failed to load event details', 'error');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEventDetailsInternal();
+    if (id) {
+      fetchEventDetails();
+    }
   }, [id]);
 
   const formatDate = (dateString) => {
@@ -59,16 +62,14 @@ const ArchivedEventDetails = () => {
   const handleShare = async () => {
     console.log('Share button clicked');
     setSharing(true);
-    
+
     const shareData = {
-      title: event.name || event.title || 'Chinmaya Mission Event',
-      text: event.description ? event.description.substring(0, 200) + (event.description.length > 200 ? '...' : '') : 'Check out this event from Chinmaya Mission Vasai',
+      title: event.title || 'Chinmaya Mission Archived Event',
+      text: event.description ? event.description.substring(0, 200) + (event.description.length > 200 ? '...' : '') : 'Check out this archived event from Chinmaya Mission Vasai',
       url: window.location.href
     };
 
     console.log('Share data:', shareData);
-    console.log('Navigator.share available:', !!navigator.share);
-    console.log('Navigator.canShare available:', !!navigator.canShare);
 
     // Check if Web Share API is supported (mainly mobile browsers)
     if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
@@ -91,7 +92,7 @@ const ArchivedEventDetails = () => {
       // Fallback for desktop browsers or when Web Share API is not available
       await copyToClipboard();
     }
-    
+
     setSharing(false);
   };
 
@@ -115,7 +116,7 @@ const ArchivedEventDetails = () => {
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        
+
         try {
           const success = document.execCommand('copy');
           console.log('Fallback copy success:', success);
@@ -142,7 +143,11 @@ const ArchivedEventDetails = () => {
   };
 
   if (loading) {
-    return <ArchivedEventDetailsSkeleton />;
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#BC3612] dark:border-[#F47930]"></div>
+      </div>
+    );
   }
 
   if (error || !event) {
@@ -172,22 +177,25 @@ const ArchivedEventDetails = () => {
   }
 
   // Prepare images for lightbox
-  const lightboxImages = event.images?.map((img, index) => ({
+  const lightboxImages = (event.allImages || event.images || [])?.map((img, index) => ({
     url: typeof img === 'string' ? img : img.url,
     caption: typeof img === 'string' ? `${event.title} - Photo ${index + 1}` : (img.caption || `${event.title} - Photo ${index + 1}`)
   })) || [];
 
   const breadcrumbItems = [
+    { label: 'Home', href: '/' },
     { label: 'Archived Events', href: '/archived-events' },
     { label: event.title }
   ];
+
+  const allImages = event.allImages || event.images || [];
 
   return (
     <>
       <Helmet>
         <title>{event.title} | Archived Events | Chinmaya Mission Vasai</title>
         <meta name="description" content={event.description} />
-        <meta name="keywords" content={`${event.title}, archived event, Chinmaya Mission Vasai, ${event.highlights?.join(', ')}`} />
+        <meta name="keywords" content={`${event.title}, archived event, Chinmaya Mission Vasai`} />
         <meta property="og:title" content={event.title} />
         <meta property="og:description" content={event.description} />
         <meta property="og:image" content={event.coverImage} />
@@ -282,13 +290,13 @@ const ArchivedEventDetails = () => {
                 </div>
 
                 {/* Event Gallery */}
-                {event.images && event.images.length > 0 && (
+                {allImages && allImages.length > 0 && (
                   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                      Event Gallery ({event.images.length} photos)
+                      Event Gallery ({allImages.length} photos)
                     </h2>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {event.images.map((image, index) => (
+                      {allImages.map((image, index) => (
                         <div
                           key={index}
                           className="relative group cursor-pointer overflow-hidden rounded-lg aspect-square"
@@ -355,34 +363,66 @@ const ArchivedEventDetails = () => {
                   </div>
                 </div>
 
-                {/* Event Highlights */}
-                {event.highlights && event.highlights.length > 0 && (
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                      Highlights
-                    </h3>
-                    <ul className="space-y-2">
-                      {event.highlights.map((highlight, index) => (
-                        <li key={index} className="flex items-start">
-                          <span className="text-[#BC3612] dark:text-[#F47930] mr-2">•</span>
-                          <span className="text-gray-600 dark:text-gray-300">{highlight}</span>
-                        </li>
-                      ))}
-                    </ul>
+                {/* Contact Section */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                    Contact
+                  </h3>
+                  <ContactButtons
+                    showLabel={false}
+                    layout="vertical"
+                    size="default"
+                  />
+                </div>
+
+                {/* Quick Actions */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                    Quick Actions
+                  </h3>
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleShare}
+                      disabled={sharing}
+                      className="w-full flex items-center justify-center px-4 py-3 bg-[#BC3612] dark:bg-[#F47930] hover:bg-[#ff725e] dark:hover:bg-[#ff725e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                    >
+                      {sharing ? (
+                        <>
+                          <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+                          Sharing...
+                        </>
+                      ) : (
+                        <>
+                          <FaShareAlt className="w-4 h-4 mr-2" />
+                          Share Event
+                        </>
+                      )}
+                    </button>
+                    <Link
+                      to="/archived-events"
+                      onClick={handleBackToEventsClick}
+                      className="w-full flex items-center justify-center px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg transition-colors"
+                    >
+                      <FaArrowLeft className="w-4 h-4 mr-2" />
+                      Back to Events
+                    </Link>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Image Lightbox */}
-        <ImageLightbox
-          images={lightboxImages}
-          isOpen={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-          initialIndex={lightboxIndex}
-        />
+        {lightboxImages.length > 0 && (
+          <ImageLightbox
+            images={lightboxImages}
+            isOpen={lightboxOpen}
+            currentIndex={lightboxIndex}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setLightboxIndex}
+          />
+        )}
       </div>
     </>
   );
