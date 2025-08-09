@@ -425,9 +425,8 @@ const EventDetails = ({ featuredEvents }) => {
                     <ImageLightbox
                         images={lightboxImages}
                         isOpen={lightboxOpen}
-                        currentIndex={lightboxIndex}
+                        initialIndex={lightboxIndex}
                         onClose={() => setLightboxOpen(false)}
-                        onIndexChange={setLightboxIndex}
                     />
                 )}
             </div>
